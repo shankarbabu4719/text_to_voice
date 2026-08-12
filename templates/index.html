@@ -357,6 +357,11 @@ audio{width:100%;border-radius:8px;outline:none;accent-color:var(--accent);}
   function playNote(freq, vol){
     try{
       const ac=getAC(), t=ac.currentTime;
+      
+      // Boost volume for lower frequencies (left side keys)
+      const bassBoost = freq < 200 ? 1.5 : freq < 350 ? 1.2 : 1.0;
+      vol = vol * bassBoost;
+      
       const o1=ac.createOscillator(), o2=ac.createOscillator(), o3=ac.createOscillator();
       o1.type='triangle'; o1.frequency.value=freq;
       o1.detune.value=(Math.random()-.5)*3;
@@ -434,10 +439,14 @@ audio{width:100%;border-radius:8px;outline:none;accent-color:var(--accent);}
       const blacks = keys.filter(k=>k.type==='B');
       if(hit.type==='W'){
         const idx = whites.indexOf(hit);
-        playNote(WF[Math.min(idx, WF.length-1)], 0.38);
+        // Higher volume for left side (lower frequencies need more volume)
+        const volume = idx < 14 ? 0.55 : 0.45; // Left half louder
+        playNote(WF[Math.min(idx, WF.length-1)], volume);
       } else {
         const idx = blacks.indexOf(hit);
-        playNote(BF[Math.min(idx, BF.length-1)], 0.30);
+        // Higher volume for left side black keys too
+        const volume = idx < 10 ? 0.50 : 0.40; // Left half louder
+        playNote(BF[Math.min(idx, BF.length-1)], volume);
       }
     }
   }, true); /* true = capture phase — fires before any child element */
