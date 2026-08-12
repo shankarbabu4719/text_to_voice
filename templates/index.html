@@ -414,8 +414,9 @@ audio{width:100%;border-radius:8px;outline:none;accent-color:var(--accent);}
   let swipeStartX = null;
   let swipeKeys = [];
   let isSwipeMode = false;
+  let hasMoved = false;
 
-  /* Touch/Mouse events for swipe melody */
+  /* Touch events for mobile */
   window.addEventListener('touchstart', function(e){
     const yB = H - KH_W;
     if(e.touches[0].clientY < yB) return;
@@ -423,6 +424,7 @@ audio{width:100%;border-radius:8px;outline:none;accent-color:var(--accent);}
     swipeStartX = e.touches[0].clientX;
     swipeKeys = [];
     isSwipeMode = true;
+    hasMoved = false;
     e.preventDefault();
   }, true);
 
@@ -431,16 +433,17 @@ audio{width:100%;border-radius:8px;outline:none;accent-color:var(--accent);}
     const yB = H - KH_W;
     if(e.touches[0].clientY < yB) return;
     
+    hasMoved = true; // User is swiping
     const mx = e.touches[0].clientX;
     let hit = null;
 
     /* Find key under current touch */
     for(const k of keys){
-      if(k.type==='B' && mx>=k.x && mx<=k.x+k.w){hit=k;break;}
+      if(k.type==='B' && mx>=k.x && mx<=k.x+k.w && e.touches[0].clientY>=yB && e.touches[0].clientY<=yB+k.h){hit=k;break;}
     }
     if(!hit){
       for(const k of keys){
-        if(k.type==='W' && mx>=k.x && mx<=k.x+k.w){hit=k;break;}
+        if(k.type==='W' && mx>=k.x && mx<=k.x+k.w && e.touches[0].clientY>=yB && e.touches[0].clientY<=yB+k.h){hit=k;break;}
       }
     }
 
@@ -462,43 +465,84 @@ audio{width:100%;border-radius:8px;outline:none;accent-color:var(--accent);}
           const volume = idx < 10 ? 0.40 : 0.30;
           playNote(BF[Math.min(idx, BF.length-1)], volume);
         }
-      }, swipeKeys.length * 50); /* Staggered timing for melody */
+      }, swipeKeys.length * 50);
     }
     e.preventDefault();
   }, true);
 
   window.addEventListener('touchend', function(e){
+    const yB = H - KH_W;
+    
+    // If user didn't move (just tap), play single note
+    if(!hasMoved && e.changedTouches[0].clientY >= yB){
+      const mx = e.changedTouches[0].clientX;
+      const my = e.changedTouches[0].clientY;
+      let hit = null;
+
+      /* Find key for single tap */
+      for(const k of keys){
+        if(k.type==='B' && mx>=k.x && mx<=k.x+k.w && my>=yB && my<=yB+k.h){hit=k;break;}
+      }
+      if(!hit){
+        for(const k of keys){
+          if(k.type==='W' && mx>=k.x && mx<=k.x+k.w && my>=yB && my<=yB+k.h){hit=k;break;}
+        }
+      }
+
+      if(hit){
+        hit.press = 1;
+        spawn(hit.x + hit.w/2, yB - 8);
+
+        const whites = keys.filter(k=>k.type==='W');
+        const blacks = keys.filter(k=>k.type==='B');
+        if(hit.type==='W'){
+          const idx = whites.indexOf(hit);
+          const volume = idx < 14 ? 0.55 : 0.45;
+          playNote(WF[Math.min(idx, WF.length-1)], volume);
+        } else {
+          const idx = blacks.indexOf(hit);
+          const volume = idx < 10 ? 0.50 : 0.40;
+          playNote(BF[Math.min(idx, BF.length-1)], volume);
+        }
+      }
+    }
+    
     isSwipeMode = false;
     swipeKeys = [];
+    hasMoved = false;
     e.preventDefault();
   }, true);
 
-  /* Mouse swipe support for desktop testing */
+  /* Mouse events for desktop */
   let mouseDown = false;
+  let mouseMoved = false;
+  
   window.addEventListener('mousedown', function(e){
     const yB = H - KH_W;
     if(e.clientY < yB) return;
     
     mouseDown = true;
+    mouseMoved = false;
     swipeStartX = e.clientX;
     swipeKeys = [];
     isSwipeMode = true;
   }, true);
 
   window.addEventListener('mousemove', function(e){
-    if(!mouseDown || !isSwipeMode) return;
+    if(!mouseDown) return;
     const yB = H - KH_W;
     if(e.clientY < yB) return;
     
+    mouseMoved = true; // User is dragging
     const mx = e.clientX;
     let hit = null;
 
     for(const k of keys){
-      if(k.type==='B' && mx>=k.x && mx<=k.x+k.w){hit=k;break;}
+      if(k.type==='B' && mx>=k.x && mx<=k.x+k.w && e.clientY>=yB && e.clientY<=yB+k.h){hit=k;break;}
     }
     if(!hit){
       for(const k of keys){
-        if(k.type==='W' && mx>=k.x && mx<=k.x+k.w){hit=k;break;}
+        if(k.type==='W' && mx>=k.x && mx<=k.x+k.w && e.clientY>=yB && e.clientY<=yB+k.h){hit=k;break;}
       }
     }
 
@@ -524,12 +568,48 @@ audio{width:100%;border-radius:8px;outline:none;accent-color:var(--accent);}
   }, true);
 
   window.addEventListener('mouseup', function(e){
+    const yB = H - KH_W;
+    
+    // If user didn't drag (just click), play single note
+    if(!mouseMoved && e.clientY >= yB){
+      const mx = e.clientX;
+      const my = e.clientY;
+      let hit = null;
+
+      /* Find key for single click */
+      for(const k of keys){
+        if(k.type==='B' && mx>=k.x && mx<=k.x+k.w && my>=yB && my<=yB+k.h){hit=k;break;}
+      }
+      if(!hit){
+        for(const k of keys){
+          if(k.type==='W' && mx>=k.x && mx<=k.x+k.w && my>=yB && my<=yB+k.h){hit=k;break;}
+        }
+      }
+
+      if(hit){
+        e.preventDefault();
+        hit.press = 1;
+        spawn(hit.x + hit.w/2, yB - 8);
+
+        const whites = keys.filter(k=>k.type==='W');
+        const blacks = keys.filter(k=>k.type==='B');
+        if(hit.type==='W'){
+          const idx = whites.indexOf(hit);
+          const volume = idx < 14 ? 0.55 : 0.45;
+          playNote(WF[Math.min(idx, WF.length-1)], volume);
+        } else {
+          const idx = blacks.indexOf(hit);
+          const volume = idx < 10 ? 0.50 : 0.40;
+          playNote(BF[Math.min(idx, BF.length-1)], volume);
+        }
+      }
+    }
+    
     mouseDown = false;
+    mouseMoved = false;
     isSwipeMode = false;
     swipeKeys = [];
   }, true);
-
-  /* Regular click/tap (existing functionality) */
   window.addEventListener('mousedown', function(e){
     const yB = H - KH_W;
     if(e.clientY < yB) return; /* above piano — ignore */
