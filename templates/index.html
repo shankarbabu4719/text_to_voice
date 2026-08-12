@@ -141,12 +141,40 @@ audio{width:100%;border-radius:8px;outline:none;accent-color:var(--accent);}
 .strip-arrow{width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.05);border:1px solid var(--border-hi);display:flex;align-items:center;justify-content:center;font-size:.72rem;color:var(--text3);flex-shrink:0;cursor:pointer;opacity:.5;transition:all .18s;user-select:none;}
 .strip-arrow:hover{opacity:1;color:var(--accent);background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.3);}
 
-/* Credit strip — below piano keys */
-.credit-strip{position:fixed;left:0;right:0;bottom:0;z-index:10;display:flex;align-items:center;justify-content:center;gap:6px;background:rgba(9,9,11,.9);padding:4px 0;border-top:1px solid rgba(255,255,255,.04);}
-.clbl{font-size:.56rem;font-weight:500;color:rgba(148,140,132,.55);letter-spacing:.06em;text-transform:uppercase;}
+/* Credit badge — fixed bottom-right, above piano */
+.credit-strip{
+  position:fixed;
+  right:16px;
+  bottom:0; /* JS sets this above piano */
+  z-index:200;
+  display:flex;align-items:center;gap:6px;
+  background:rgba(9,9,11,.82);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:10px 10px 0 0;
+  padding:5px 14px 5px 10px;
+  box-shadow:0 -2px 12px rgba(0,0,0,.4);
+  animation:csi .6s cubic-bezier(.34,1.56,.64,1) 1s both;
+}
+@keyframes csi{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.clbl{font-size:.55rem;font-weight:500;color:rgba(148,140,132,.55);letter-spacing:.06em;text-transform:uppercase;}
 .cname{font-size:.68rem;font-weight:800;letter-spacing:.01em;position:relative;color:#f59e0b;}
 .cname::after{content:'Mr.Chinnoda';position:absolute;top:0;left:0;width:100%;height:100%;background:linear-gradient(100deg,transparent 0%,transparent 30%,rgba(200,200,200,.15) 38%,rgba(255,255,255,.88) 48%,rgba(230,230,230,.95) 52%,rgba(255,255,255,.88) 58%,rgba(200,200,200,.15) 66%,transparent 74%,transparent 100%);background-size:300% 100%;background-position:200% center;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:sgs 2.4s ease-in-out infinite;pointer-events:none;}
 @keyframes sgs{0%{background-position:200% center}55%,100%{background-position:-100% center}}
+
+/* ── MOBILE RESPONSIVE ── */
+@media(max-width:600px){
+  .navbar{padding:14px 16px 10px;}
+  .wrap{padding:0 12px 12px;}
+  .tool-grid{grid-template-columns:1fr;gap:10px;}
+  .voice-grid{grid-template-columns:1fr 1fr;}
+  textarea{min-height:120px;font-size:.88rem;}
+  .card{padding:14px 16px;}
+  .gen-btn{padding:14px;font-size:.9rem;}
+  .nav-logo-name{font-size:.88rem;}
+  .nav-badge{font-size:.62rem;padding:4px 10px;}
+  .credit-strip{right:8px;}
+}
 
 @keyframes fu{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 .fi{animation:fu .5s ease both;}
@@ -280,7 +308,8 @@ audio{width:100%;border-radius:8px;outline:none;accent-color:var(--accent);}
     const pianoH = KH_W;
     const credit = document.getElementById('creditStrip');
     const page   = document.querySelector('.page');
-    if(credit) credit.style.bottom = '0px';
+    /* credit badge sits just above piano top edge */
+    if(credit) credit.style.bottom = pianoH + 'px';
     if(page)   page.style.paddingBottom = (pianoH + 12) + 'px';
   }
 
