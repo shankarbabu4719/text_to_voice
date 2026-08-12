@@ -410,9 +410,126 @@ audio{width:100%;border-radius:8px;outline:none;accent-color:var(--accent);}
     setTimeout(ambientSpawn, 800+Math.random()*1400);
   }
 
-  /* ── PIANO SOUND — window-level mousedown, capture phase ──
-     Capture phase runs BEFORE any element gets the event,
-     so left-side UI elements cannot block it */
+  /* ── PIANO SOUND + SWIPE MELODY ── */
+  let swipeStartX = null;
+  let swipeKeys = [];
+  let isSwipeMode = false;
+
+  /* Touch/Mouse events for swipe melody */
+  window.addEventListener('touchstart', function(e){
+    const yB = H - KH_W;
+    if(e.touches[0].clientY < yB) return;
+    
+    swipeStartX = e.touches[0].clientX;
+    swipeKeys = [];
+    isSwipeMode = true;
+    e.preventDefault();
+  }, true);
+
+  window.addEventListener('touchmove', function(e){
+    if(!isSwipeMode) return;
+    const yB = H - KH_W;
+    if(e.touches[0].clientY < yB) return;
+    
+    const mx = e.touches[0].clientX;
+    let hit = null;
+
+    /* Find key under current touch */
+    for(const k of keys){
+      if(k.type==='B' && mx>=k.x && mx<=k.x+k.w){hit=k;break;}
+    }
+    if(!hit){
+      for(const k of keys){
+        if(k.type==='W' && mx>=k.x && mx<=k.x+k.w){hit=k;break;}
+      }
+    }
+
+    if(hit && !swipeKeys.includes(hit)){
+      swipeKeys.push(hit);
+      hit.press = 1;
+      spawn(hit.x + hit.w/2, yB - 8);
+
+      /* Play note with slight delay for melody effect */
+      setTimeout(() => {
+        const whites = keys.filter(k=>k.type==='W');
+        const blacks = keys.filter(k=>k.type==='B');
+        if(hit.type==='W'){
+          const idx = whites.indexOf(hit);
+          const volume = idx < 14 ? 0.45 : 0.35;
+          playNote(WF[Math.min(idx, WF.length-1)], volume);
+        } else {
+          const idx = blacks.indexOf(hit);
+          const volume = idx < 10 ? 0.40 : 0.30;
+          playNote(BF[Math.min(idx, BF.length-1)], volume);
+        }
+      }, swipeKeys.length * 50); /* Staggered timing for melody */
+    }
+    e.preventDefault();
+  }, true);
+
+  window.addEventListener('touchend', function(e){
+    isSwipeMode = false;
+    swipeKeys = [];
+    e.preventDefault();
+  }, true);
+
+  /* Mouse swipe support for desktop testing */
+  let mouseDown = false;
+  window.addEventListener('mousedown', function(e){
+    const yB = H - KH_W;
+    if(e.clientY < yB) return;
+    
+    mouseDown = true;
+    swipeStartX = e.clientX;
+    swipeKeys = [];
+    isSwipeMode = true;
+  }, true);
+
+  window.addEventListener('mousemove', function(e){
+    if(!mouseDown || !isSwipeMode) return;
+    const yB = H - KH_W;
+    if(e.clientY < yB) return;
+    
+    const mx = e.clientX;
+    let hit = null;
+
+    for(const k of keys){
+      if(k.type==='B' && mx>=k.x && mx<=k.x+k.w){hit=k;break;}
+    }
+    if(!hit){
+      for(const k of keys){
+        if(k.type==='W' && mx>=k.x && mx<=k.x+k.w){hit=k;break;}
+      }
+    }
+
+    if(hit && !swipeKeys.includes(hit)){
+      swipeKeys.push(hit);
+      hit.press = 1;
+      spawn(hit.x + hit.w/2, yB - 8);
+
+      setTimeout(() => {
+        const whites = keys.filter(k=>k.type==='W');
+        const blacks = keys.filter(k=>k.type==='B');
+        if(hit.type==='W'){
+          const idx = whites.indexOf(hit);
+          const volume = idx < 14 ? 0.45 : 0.35;
+          playNote(WF[Math.min(idx, WF.length-1)], volume);
+        } else {
+          const idx = blacks.indexOf(hit);
+          const volume = idx < 10 ? 0.40 : 0.30;
+          playNote(BF[Math.min(idx, BF.length-1)], volume);
+        }
+      }, swipeKeys.length * 40);
+    }
+  }, true);
+
+  window.addEventListener('mouseup', function(e){
+    mouseDown = false;
+    isSwipeMode = false;
+    swipeKeys = [];
+  }, true);
+
+  /* Regular click/tap (existing functionality) */
   window.addEventListener('mousedown', function(e){
     const yB = H - KH_W;
     if(e.clientY < yB) return; /* above piano — ignore */
