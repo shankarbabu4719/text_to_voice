@@ -1,0 +1,6 @@
+tts_env/
+static/audio/
+__pycache__/
+*.pyc
+*.mp3
+.env
