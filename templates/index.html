@@ -38,7 +38,6 @@ html,body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);
 
 /* Tool grid */
 .tool-grid{display:grid;grid-template-columns:1fr 320px;gap:12px;}
-@media(max-width:760px){.tool-grid{grid-template-columns:1fr;}}
 
 /* Card */
 .card{background:var(--surface);border:1px solid var(--border-hi);border-radius:18px;padding:18px 20px;position:relative;overflow:hidden;transition:border-color .25s;}
@@ -134,19 +133,9 @@ audio{width:100%;border-radius:8px;outline:none;accent-color:var(--accent);}
 .dl-btn{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;padding:11px;background:var(--surface2);border:1px solid var(--border-hi);border-radius:10px;color:var(--text2);font-size:.84rem;font-weight:700;text-decoration:none;font-family:'Inter',sans-serif;cursor:pointer;transition:all .2s;margin-top:12px;}
 .dl-btn:hover{background:rgba(245,158,11,.07);border-color:rgba(245,158,11,.28);color:var(--accent);transform:translateY(-1px);}
 
-/* Voice strip — fixed above piano */
-.voice-strip{position:fixed;left:0;right:0;bottom:0;z-index:10;display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(9,9,11,.95);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1.5px solid rgba(245,158,11,.25);padding:8px 20px;overflow-x:auto;scrollbar-width:none;scroll-behavior:smooth;min-height:58px;}
-.voice-strip::-webkit-scrollbar{display:none;}
-.vs-label{font-size:.6rem;font-weight:700;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;flex-shrink:0;display:flex;align-items:center;gap:5px;margin-right:4px;}
-.strip-arrow{width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.05);border:1px solid var(--border-hi);display:flex;align-items:center;justify-content:center;font-size:.72rem;color:var(--text3);flex-shrink:0;cursor:pointer;opacity:.5;transition:all .18s;user-select:none;}
-.strip-arrow:hover{opacity:1;color:var(--accent);background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.3);}
-
-/* Credit badge — fixed bottom-right, above piano */
+/* Credit badge — fixed bottom-right, just above piano */
 .credit-strip{
-  position:fixed;
-  right:16px;
-  bottom:0; /* JS sets this above piano */
-  z-index:200;
+  position:fixed;right:16px;bottom:0;z-index:200;
   display:flex;align-items:center;gap:6px;
   background:rgba(9,9,11,.82);
   backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
@@ -162,18 +151,25 @@ audio{width:100%;border-radius:8px;outline:none;accent-color:var(--accent);}
 .cname::after{content:'Mr.Chinnoda';position:absolute;top:0;left:0;width:100%;height:100%;background:linear-gradient(100deg,transparent 0%,transparent 30%,rgba(200,200,200,.15) 38%,rgba(255,255,255,.88) 48%,rgba(230,230,230,.95) 52%,rgba(255,255,255,.88) 58%,rgba(200,200,200,.15) 66%,transparent 74%,transparent 100%);background-size:300% 100%;background-position:200% center;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:sgs 2.4s ease-in-out infinite;pointer-events:none;}
 @keyframes sgs{0%{background-position:200% center}55%,100%{background-position:-100% center}}
 
-/* ── MOBILE RESPONSIVE ── */
+/* ── RESPONSIVE ── */
+@media(max-width:760px){
+  .tool-grid{grid-template-columns:1fr;}
+}
 @media(max-width:600px){
-  .navbar{padding:14px 16px 10px;}
-  .wrap{padding:0 12px 12px;}
-  .tool-grid{grid-template-columns:1fr;gap:10px;}
-  .voice-grid{grid-template-columns:1fr 1fr;}
-  textarea{min-height:120px;font-size:.88rem;}
-  .card{padding:14px 16px;}
-  .gen-btn{padding:14px;font-size:.9rem;}
-  .nav-logo-name{font-size:.88rem;}
-  .nav-badge{font-size:.62rem;padding:4px 10px;}
-  .credit-strip{right:8px;}
+  .navbar{padding:12px 14px 10px;}
+  .wrap{padding:0 10px 10px;}
+  .tool-grid{grid-template-columns:1fr;gap:8px;}
+  .voice-grid{grid-template-columns:1fr 1fr;gap:6px;}
+  textarea{min-height:110px;font-size:.87rem;padding:11px 13px;}
+  .card{padding:13px 14px;border-radius:14px;}
+  .gen-btn{padding:13px;font-size:.88rem;border-radius:12px;}
+  .nav-logo-name{font-size:.86rem;}
+  .nav-badge{font-size:.6rem;padding:4px 9px;}
+  .credit-strip{right:8px;padding:4px 10px 4px 8px;}
+  .clbl{display:none;} /* hide label on mobile, just show name */
+  .sitem{margin-bottom:14px;}
+  .result-box,.prog-box{padding:14px;}
+  audio{border-radius:6px;}
 }
 
 @keyframes fu{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
