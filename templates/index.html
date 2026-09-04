@@ -75,6 +75,15 @@ textarea::placeholder{color:var(--text3);font-size:.88rem;}
 .vcard.active .v-chk{background:var(--accent);border-color:var(--accent);box-shadow:0 0 8px rgba(245,158,11,.55);}
 .vcard.active .v-chk svg{opacity:1;}
 
+/* Voice Effects */
+.effects-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:4px;}
+.effect-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 6px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;transition:all .2s;text-align:center;min-height:60px;}
+.effect-card:hover{border-color:rgba(245,158,11,.3);background:rgba(245,158,11,.04);transform:translateY(-1px);}
+.effect-card.active{border-color:var(--accent);background:rgba(245,158,11,.08);box-shadow:0 0 0 1px rgba(245,158,11,.1) inset;}
+.effect-icon{font-size:1.2rem;line-height:1;}
+.effect-name{font-size:.65rem;font-weight:600;color:var(--text2);line-height:1.1;}
+.effect-card.active .effect-name{color:var(--accent);}
+
 /* Sliders */
 .sitem{margin-bottom:18px;}
 .sitem:last-of-type{margin-bottom:0;}
@@ -221,6 +230,19 @@ audio{width:100%;border-radius:8px;outline:none;accent-color:var(--accent);}
               <div><div class="v-name">Mohan</div><div class="v-sub">Male · Telugu</div></div>
               <div class="v-chk"><svg viewBox="0 0 10 10" fill="none" stroke="white" stroke-width="2.2"><polyline points="1.5,5 4,7.5 8.5,2.5"/></svg></div>
             </div>
+          </div>
+        </div>
+
+        <!-- Voice Effects -->
+        <div class="card fi d2">
+          <div class="ctitle"><span class="cdot"></span>Voice Effects</div>
+          <div class="effects-grid">
+            {% for effect in effects %}
+            <div class="effect-card {% if effect.id == 'normal' %}active{% endif %}" id="effect-{{ effect.id }}" onclick="pickEffect('{{ effect.id }}')">
+              <div class="effect-icon">{{ effect.icon }}</div>
+              <div class="effect-name">{{ effect.name }}</div>
+            </div>
+            {% endfor %}
           </div>
         </div>
       </div>
@@ -747,6 +769,7 @@ audio{width:100%;border-radius:8px;outline:none;accent-color:var(--accent);}
 ═══════════════════════════════════════════ */
 const PRESETS = {{ presets | tojson }};
 let voice='te-IN-ShrutiNeural';
+let selectedEffect='normal';
 
 function syncSlider(inId,fillId,valId,fmt){
   const el=document.getElementById(inId),fi=document.getElementById(fillId),vl=document.getElementById(valId);
@@ -770,6 +793,14 @@ function pickVoice(id,key){
   document.getElementById('vc-'+key).classList.add('active');
   resetPrev();
 }
+
+function pickEffect(id){
+  selectedEffect=id;
+  document.querySelectorAll('.effect-card').forEach(c=>c.classList.remove('active'));
+  document.getElementById('effect-'+id).classList.add('active');
+  resetPrev();
+}
+
 function resetPrev(){
   document.getElementById('prev-result').style.display='none';
   document.getElementById('prev-txt').textContent='▶  Preview Voice';
@@ -806,7 +837,7 @@ async function doPreview(){
   document.getElementById('prev-txt').textContent='Loading…';
   document.getElementById('prev-result').style.display='none';
   try{
-    await streamGen({text:sample,voice,rate,pitch},()=>{},msg=>{
+    await streamGen({text:sample,voice,rate,pitch,effect:selectedEffect},()=>{},msg=>{
       const a=document.getElementById('prev-audio');
       a.src=msg.url+'?t='+Date.now();a.load();
       document.getElementById('prev-result').style.display='block';
@@ -826,7 +857,7 @@ async function doGenerate(){
   document.getElementById('result-card').style.display='none';
   setBusy(true);
   try{
-    await streamGen({text,voice,rate,pitch},
+    await streamGen({text,voice,rate,pitch,effect:selectedEffect},
       msg=>{setProg(msg.progress,msg.total>1?`Part ${msg.step} of ${msg.total}`:'Processing…');},
       msg=>{
         setBusy(false);setProg(100,'Complete ✓');

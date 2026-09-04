@@ -34,6 +34,15 @@ VOICES = [
     {"id": "te-IN-MohanNeural",  "name": "Mohan",  "gender": "Male",   "lang": "Telugu"},
 ]
 
+VOICE_EFFECTS = [
+    {"id": "normal", "name": "Normal", "icon": "🎤", "description": "Clear natural voice"},
+    {"id": "cave", "name": "Cave Echo", "icon": "🏔️", "description": "Deep cave reverb"},
+    {"id": "underwater", "name": "Underwater", "icon": "🌊", "description": "Underwater bubbling effect"},
+    {"id": "radio", "name": "Radio", "icon": "📻", "description": "Old radio transmission"},
+    {"id": "robot", "name": "Robot", "icon": "🤖", "description": "Robotic voice modulation"},
+    {"id": "whisper", "name": "Whisper", "icon": "🤫", "description": "Soft whispering effect"},
+]
+
 PRESETS = [
     {"label": "Normal",        "rate": "+0%",  "pitch": "+0Hz"},
     {"label": "Slow & Clear",  "rate": "-15%", "pitch": "+0Hz"},
@@ -132,18 +141,82 @@ async def generate_chunk(text, voice, rate, pitch, filepath):
     communicate = edge_tts.Communicate(text, voice, rate=rate, pitch=pitch)
     await communicate.save(filepath)
 
+def apply_voice_effect(input_file, output_file, effect):
+    """Apply audio effects using FFmpeg"""
+    try:
+        import subprocess
+        
+        if effect == "normal":
+            # No effect, just copy
+            import shutil
+            shutil.copy2(input_file, output_file)
+            return True
+            
+        elif effect == "cave":
+            # Cave echo - large reverb
+            cmd = [
+                "ffmpeg", "-i", input_file, "-af", 
+                "aecho=0.8:0.9:1000:0.3,aecho=0.4:0.7:1800:0.25,volume=1.2",
+                "-y", output_file
+            ]
+        elif effect == "underwater":
+            # Underwater - low pass filter + bubbling
+            cmd = [
+                "ffmpeg", "-i", input_file, "-af", 
+                "lowpass=f=800,aecho=0.5:0.7:100:0.1,volume=0.8",
+                "-y", output_file
+            ]
+        elif effect == "radio":
+            # Radio - band pass filter + static
+            cmd = [
+                "ffmpeg", "-i", input_file, "-af", 
+                "bandpass=f=1000:width_type=h:w=800,volume=1.1",
+                "-y", output_file
+            ]
+        elif effect == "robot":
+            # Robot - pitch shift + chorus
+            cmd = [
+                "ffmpeg", "-i", input_file, "-af", 
+                "asetrate=22050*1.2,aresample=22050,volume=0.9",
+                "-y", output_file
+            ]
+        elif effect == "whisper":
+            # Whisper - soft compression + quieter
+            cmd = [
+                "ffmpeg", "-i", input_file, "-af", 
+                "compand=attacks=0.3:decays=0.8:points=-90/-900|-70/-70|-30/-9:volume=0.5",
+                "-y", output_file
+            ]
+        else:
+            # Fallback to normal
+            import shutil
+            shutil.copy2(input_file, output_file)
+            return True
+        
+        # Run FFmpeg command
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        return result.returncode == 0
+        
+    except Exception as e:
+        print(f"Effect processing failed: {e}")
+        # Fallback - copy original file
+        import shutil
+        shutil.copy2(input_file, output_file)
+        return False
+
 @app.route("/")
 def index():
-    return render_template("index.html", voices=VOICES, presets=PRESETS)
+    return render_template("index.html", voices=VOICES, presets=PRESETS, effects=VOICE_EFFECTS)
 
 @app.route("/generate_stream", methods=["POST"])
 def generate_stream():
     """SSE stream — progress % పంపుతూ generate చేస్తుంది"""
-    data  = request.json
-    text  = data.get("text", "").strip()
-    voice = data.get("voice", "te-IN-ShrutiNeural")
-    rate  = data.get("rate",  "+0%")
-    pitch = data.get("pitch", "+0Hz")
+    data   = request.json
+    text   = data.get("text", "").strip()
+    voice  = data.get("voice", "te-IN-ShrutiNeural")
+    rate   = data.get("rate",  "+0%")
+    pitch  = data.get("pitch", "+0Hz")
+    effect = data.get("effect", "normal")
 
     if not text:
         return jsonify({"error": "Text రాయండి"}), 400
@@ -167,14 +240,14 @@ def generate_stream():
                     generate_chunk(chunk, voice, rate, pitch, tmp_path)
                 )
 
-                pct = int((i + 1) / total * 90)
+                pct = int((i + 1) / total * 70)  # 70% for generation
                 yield f"data: {json.dumps({'progress': pct, 'step': i+1, 'total': total})}\n\n"
 
             # Merge all chunks into one file
-            final_name = f"{job_id}.mp3"
-            final_path = os.path.join(AUDIO_DIR, final_name)
+            raw_name = f"{job_id}_raw.mp3"
+            raw_path = os.path.join(AUDIO_DIR, raw_name)
 
-            with open(final_path, "wb") as out:
+            with open(raw_path, "wb") as out:
                 for tf in tmp_files:
                     with open(tf, "rb") as inp:
                         out.write(inp.read())
@@ -183,6 +256,22 @@ def generate_stream():
             for tf in tmp_files:
                 try: os.remove(tf)
                 except: pass
+
+            # Apply voice effect
+            yield f"data: {json.dumps({'progress': 80, 'step': 'Applying effects...'})}\n\n"
+            
+            final_name = f"{job_id}.mp3"
+            final_path = os.path.join(AUDIO_DIR, final_name)
+            
+            success = apply_voice_effect(raw_path, final_path, effect)
+            
+            # Clean up raw file
+            try: os.remove(raw_path)
+            except: pass
+
+            if not success:
+                # If effect failed, use raw file
+                os.rename(raw_path, final_path)
 
             loop.close()
             yield f"data: {json.dumps({'progress': 100, 'done': True, 'url': f'/static/audio/{final_name}', 'filename': final_name})}\n\n"
