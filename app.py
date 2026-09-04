@@ -171,25 +171,37 @@ def preprocess_telugu_text(text):
         
         return match.group()  # Return original if not handled
     
-    # Years pattern - match 4-digit years
+    # Years pattern - match 4-digit years FIRST (before individual numbers)
     text = re.sub(r'\b(19[0-9]{2}|20[0-9]{2})\b', replace_years, text)
     
-    # Common numbers (0-99)
-    number_replacements = {
-        '0': 'సున్నా', '1': 'ఒకటి', '2': 'రెండు', '3': 'మూడు', '4': 'నాలుగు', 
-        '5': 'ఐదు', '6': 'ఆరు', '7': 'ఏడు', '8': 'ఎనిమిది', '9': 'తొమ్మిది',
-        '10': 'పది', '11': 'పదకొండు', '12': 'పన్నెండు', '13': 'పదమూడు', 
-        '14': 'పద్నాలుగు', '15': 'పదిహేను', '16': 'పదహారు', '17': 'పదిహేడు',
-        '18': 'పదెనిమిది', '19': 'పంతొమ్మిది', '20': 'ఇరవై',
-        '21': 'ఇరవై ఒకటి', '22': 'ఇరవై రెండు', '23': 'ఇరవై మూడు',
-        '24': 'ఇరవై నాలుగు', '25': 'ఇరవై ఐదు', '30': 'ముప్పై',
-        '40': 'నలభై', '50': 'యాభై', '60': 'అరవై', '70': 'డదబ్బై',
-        '80': 'ఎనభై', '90': 'తొంభై', '100': 'వంద', '1000': 'వేలు'
-    }
+    # Then handle standalone single digits and small numbers  
+    # But NOT if they're part of larger numbers or already processed years
     
-    # Replace standalone numbers (మిగతా context కి damage చేయకుండా)
-    for num, telugu in number_replacements.items():
-        text = re.sub(r'\b' + re.escape(num) + r'\b', telugu, text)
+    # Only replace standalone single digits 0-9 if they're not part of years or larger numbers
+    text = re.sub(r'(?<!\d)\b0\b(?!\d)', 'సున్నా', text)
+    text = re.sub(r'(?<!\d)\b1\b(?!\d)', 'ఒకటి', text)
+    text = re.sub(r'(?<!\d)\b2\b(?!\d)', 'రెండు', text)
+    text = re.sub(r'(?<!\d)\b3\b(?!\d)', 'మూడు', text)
+    text = re.sub(r'(?<!\d)\b4\b(?!\d)', 'నాలుగు', text)
+    text = re.sub(r'(?<!\d)\b5\b(?!\d)', 'ఐదు', text)
+    text = re.sub(r'(?<!\d)\b6\b(?!\d)', 'ఆరు', text)
+    text = re.sub(r'(?<!\d)\b7\b(?!\d)', 'ఏడు', text)
+    text = re.sub(r'(?<!\d)\b8\b(?!\d)', 'ఎనిమిది', text)
+    text = re.sub(r'(?<!\d)\b9\b(?!\d)', 'తొమ్మిది', text)
+    
+    # Common standalone numbers (10-99) - only if not part of years
+    text = re.sub(r'(?<!\d)\b10\b(?!\d)', 'పది', text)
+    text = re.sub(r'(?<!\d)\b11\b(?!\d)', 'పదకొండు', text)
+    text = re.sub(r'(?<!\d)\b12\b(?!\d)', 'పన్నెండు', text)
+    text = re.sub(r'(?<!\d)\b13\b(?!\d)', 'పదమూడు', text)
+    text = re.sub(r'(?<!\d)\b14\b(?!\d)', 'పద్నాలుగు', text)
+    text = re.sub(r'(?<!\d)\b15\b(?!\d)', 'పదిహేను', text)
+    text = re.sub(r'(?<!\d)\b20\b(?!\d)', 'ఇరవై', text)
+    text = re.sub(r'(?<!\d)\b25\b(?!\d)', 'ఇరవై ఐదు', text)
+    text = re.sub(r'(?<!\d)\b30\b(?!\d)', 'ముప్పై', text)
+    text = re.sub(r'(?<!\d)\b50\b(?!\d)', 'యాభై', text)
+    text = re.sub(r'(?<!\d)\b100\b(?!\d)', 'వంద', text)
+    text = re.sub(r'(?<!\d)\b1000\b(?!\d)', 'వేలు', text)
     
     # Currency amounts (రూపాయలు)
     text = re.sub(r'రూ\.(\d+)', r'రూపాయలు \1', text)
@@ -200,7 +212,13 @@ def preprocess_telugu_text(text):
 def split_chunks(text, max_len=300):
     """Text ని చిన్న chunks గా split చేస్తుంది"""
     # First preprocess for Telugu TTS
+    original_text = text
     text = preprocess_telugu_text(text)
+    
+    # Debug logging
+    if "20" in original_text and original_text != text:
+        print(f"DEBUG - Original: {original_text[:200]}...")
+        print(f"DEBUG - Processed: {text[:200]}...")
     
     # sentence boundaries మీద split
     parts = re.split(r'(?<=[.!?…।\n])\s*', text.strip())
