@@ -133,10 +133,24 @@ def preprocess_telugu_text(text):
         elif year >= 2000 and year <= 2099:  # 2000s
             if year == 2000:
                 return "రెండు వేలు"
-            elif year <= 2009:
-                unit = year % 10
-                unit_words = ["", "ఒకటి", "రెండు", "మూడు", "నాలుగు", "ఐదు", "ఆరు", "ఏడు", "ఎనిమిది", "తొమ్మిది"]
-                return f"రెండు వేల {unit_words[unit]}"
+            elif year == 2001:
+                return "రెండు వేల ఒకటి"
+            elif year == 2002:
+                return "రెండు వేల రెండు"
+            elif year == 2003:
+                return "రెండు వేల మూడు"
+            elif year == 2004:
+                return "రెండు వేల నాలుగు"
+            elif year == 2005:
+                return "రెండు వేల ఐదు"
+            elif year == 2006:
+                return "రెండు వేల ఆరు"
+            elif year == 2007:
+                return "రెండు వేల ఏడు"
+            elif year == 2008:
+                return "రెండు వేల ఎనిమిది"
+            elif year == 2009:
+                return "రెండు వేల తొమ్మిది"
             elif year <= 2019:
                 unit = year % 10
                 if unit == 0:
