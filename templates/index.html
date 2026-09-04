@@ -269,14 +269,6 @@ audio{width:100%;border-radius:8px;outline:none;accent-color:var(--accent);}
             <div class="twrap"><div class="tbg"></div><div class="tfill" id="pitch-fill"></div><input type="range" id="pitch" min="-30" max="30" value="0" step="5"/></div>
             <div class="sticks"><span>Low</span><span>Normal</span><span>High</span></div>
           </div>
-          <button class="prev-btn" id="prev-btn" onclick="doPreview()">
-            <div class="mini-spin" id="mini-spin"></div>
-            <span id="prev-txt">▶ &nbsp;Preview Voice</span>
-          </button>
-          <div class="prev-result" id="prev-result">
-            <div class="prev-lbl"><span class="ldot"></span>Live Preview</div>
-            <audio id="prev-audio" controls></audio>
-          </div>
         </div>
 
         <button class="gen-btn fi d3" id="gen-btn" onclick="doGenerate()">
@@ -776,7 +768,7 @@ let selectedEffect='normal';
 function syncSlider(inId,fillId,valId,fmt){
   const el=document.getElementById(inId),fi=document.getElementById(fillId),vl=document.getElementById(valId);
   function s(){const pct=((+el.value-+el.min)/(+el.max-+el.min)*100).toFixed(1);fi.style.width=pct+'%';vl.textContent=fmt(+el.value);}
-  s();el.addEventListener('input',()=>{s();resetPrev();});
+  s();el.addEventListener('input',s); // Removed resetPrev() since no separate preview
 }
 function fmtS(v){return(v>=0?'+':'')+v+'%';}
 function fmtP(v){return(v>=0?'+':'')+v+'Hz';}
@@ -793,22 +785,69 @@ function pickVoice(id,key){
   voice=id;
   document.querySelectorAll('.vcard').forEach(c=>c.classList.remove('active'));
   document.getElementById('vc-'+key).classList.add('active');
-  resetPrev();
+  // Auto-preview when voice changes
+  autoPreviewEffect();
 }
 
 function pickEffect(id){
   selectedEffect=id;
   document.querySelectorAll('.effect-card').forEach(c=>c.classList.remove('active'));
   document.getElementById('effect-'+id).classList.add('active');
-  resetPrev();
   
   // Prevent event from bubbling to piano handler
-  event.stopPropagation();
+  if(typeof event !== 'undefined') {
+    event.stopPropagation();
+    event.preventDefault();
+  }
+  
+  // Auto-preview the selected effect
+  autoPreviewEffect();
 }
 
-function resetPrev(){
-  document.getElementById('prev-result').style.display='none';
-  document.getElementById('prev-txt').textContent='▶  Preview Voice';
+async function autoPreviewEffect(){
+  // Only preview if there's text or use default
+  const txt = document.getElementById('txt').value.trim();
+  const sample = txt ? txt.slice(0,100) : 'నమస్కారం! ఇది వాయిస్ ఎఫెక్ట్ ప్రివ్యూ.';
+  
+  try{
+    // Show mini loading for effect preview
+    const effectCard = document.getElementById('effect-'+selectedEffect);
+    const originalContent = effectCard.innerHTML;
+    effectCard.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;"><div class="mini-spin" style="display:flex;"></div></div>';
+    
+    await streamGen({
+      text: sample,
+      voice,
+      rate: '+0%',  // Use default speed for quick preview
+      pitch: '+0Hz', // Use default pitch for quick preview
+      effect: selectedEffect
+    },()=>{}, msg=>{
+      // Restore effect card content
+      effectCard.innerHTML = originalContent;
+      
+      // Play preview automatically
+      const previewAudio = document.getElementById('effect-preview-audio') || createPreviewAudio();
+      previewAudio.src = msg.url + '?t=' + Date.now();
+      previewAudio.load();
+      previewAudio.play().catch(e => console.log('Auto-play blocked'));
+    }, e => {
+      // Restore effect card on error
+      effectCard.innerHTML = originalContent;
+      console.log('Preview error:', e);
+    });
+  } catch(e) {
+    console.log('Auto-preview error:', e);
+  }
+}
+
+function createPreviewAudio(){
+  // Create hidden audio element for effect previews
+  const audio = document.createElement('audio');
+  audio.id = 'effect-preview-audio';
+  audio.style.display = 'none';
+  audio.volume = 0.7; // Slightly quieter for preview
+  document.body.appendChild(audio);
+  return audio;
 }
 
 async function streamGen(payload,onP,onD,onE){
@@ -829,28 +868,6 @@ async function streamGen(payload,onP,onD,onE){
       if(msg.done)onD(msg);
     }
   }
-}
-
-async function doPreview(){
-  const txt=document.getElementById('txt').value.trim();
-  const sample=txt?txt.slice(0,150):'నమస్కారం! ఈ పథకంలో అర్హులైన విద్యార్థులకు రూ.15,000 సహాయం అందించనున్నారు.';
-  const rate=fmtS(+document.getElementById('speed').value);
-  const pitch=fmtP(+document.getElementById('pitch').value);
-  const btn=document.getElementById('prev-btn');
-  btn.disabled=true;
-  document.getElementById('mini-spin').style.display='flex';
-  document.getElementById('prev-txt').textContent='Loading…';
-  document.getElementById('prev-result').style.display='none';
-  try{
-    await streamGen({text:sample,voice,rate,pitch,effect:selectedEffect},()=>{},msg=>{
-      const a=document.getElementById('prev-audio');
-      a.src=msg.url+'?t='+Date.now();a.load();
-      document.getElementById('prev-result').style.display='block';
-      document.getElementById('prev-txt').textContent='↺  Preview Again';
-      a.play();
-    },e=>showErr(e));
-  }catch(e){showErr('Preview error: '+e.message);}
-  finally{btn.disabled=false;document.getElementById('mini-spin').style.display='none';}
 }
 
 async function doGenerate(){
