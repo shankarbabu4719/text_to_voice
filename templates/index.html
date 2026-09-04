@@ -768,7 +768,85 @@ let selectedEffect='normal';
 function syncSlider(inId,fillId,valId,fmt){
   const el=document.getElementById(inId),fi=document.getElementById(fillId),vl=document.getElementById(valId);
   function s(){const pct=((+el.value-+el.min)/(+el.max-+el.min)*100).toFixed(1);fi.style.width=pct+'%';vl.textContent=fmt(+el.value);}
-  s();el.addEventListener('input',s); // Removed resetPrev() since no separate preview
+  s();
+  
+  // Debounced preview on slider change
+  let previewTimeout;
+  el.addEventListener('input',()=>{
+    s();
+    // Clear previous timeout
+    if(previewTimeout) clearTimeout(previewTimeout);
+    // Set new timeout for preview (500ms delay to avoid too many calls)
+    previewTimeout = setTimeout(() => {
+      autoPreviewWithSettings();
+    }, 500);
+  });
+}
+
+async function autoPreviewWithSettings(){
+  // Only preview if there's text or use default
+  const txt = document.getElementById('txt').value.trim();
+  const sample = txt ? txt.slice(0,80) : 'నమస్కారం! వాయిస్ ప్రివ్యూ.'; // Shorter for quick feedback
+  
+  const rate = fmtS(+document.getElementById('speed').value);
+  const pitch = fmtP(+document.getElementById('pitch').value);
+  
+  try{
+    // Show subtle loading indicator
+    showSliderPreviewLoading();
+    
+    await streamGen({
+      text: sample,
+      voice,
+      rate,
+      pitch,
+      effect: selectedEffect
+    },()=>{}, msg=>{
+      // Hide loading indicator
+      hideSliderPreviewLoading();
+      
+      // Play preview automatically
+      const previewAudio = document.getElementById('settings-preview-audio') || createSettingsPreviewAudio();
+      previewAudio.src = msg.url + '?t=' + Date.now();
+      previewAudio.load();
+      previewAudio.play().catch(e => console.log('Auto-play blocked'));
+    }, e => {
+      hideSliderPreviewLoading();
+      console.log('Settings preview error:', e);
+    });
+  } catch(e) {
+    hideSliderPreviewLoading();
+    console.log('Settings auto-preview error:', e);
+  }
+}
+
+function createSettingsPreviewAudio(){
+  // Create hidden audio element for settings previews
+  const audio = document.createElement('audio');
+  audio.id = 'settings-preview-audio';
+  audio.style.display = 'none';
+  audio.volume = 0.6; // Slightly quieter for settings preview
+  document.body.appendChild(audio);
+  return audio;
+}
+
+function showSliderPreviewLoading(){
+  // Add subtle loading indicator to Fine-Tune section
+  const fineTuneTitle = document.querySelector('.card .ctitle');
+  if(fineTuneTitle && !document.querySelector('.preview-loading')) {
+    const loadingDot = document.createElement('div');
+    loadingDot.className = 'preview-loading';
+    loadingDot.innerHTML = '<div class="mini-spin" style="display:flex;width:8px;height:8px;border-width:1px;"></div>';
+    loadingDot.style.marginLeft = '8px';
+    fineTuneTitle.appendChild(loadingDot);
+  }
+}
+
+function hideSliderPreviewLoading(){
+  const loadingElement = document.querySelector('.preview-loading');
+  if(loadingElement) {
+    loadingElement.remove();
+  }
 }
 function fmtS(v){return(v>=0?'+':'')+v+'%';}
 function fmtP(v){return(v>=0?'+':'')+v+'Hz';}
@@ -785,8 +863,8 @@ function pickVoice(id,key){
   voice=id;
   document.querySelectorAll('.vcard').forEach(c=>c.classList.remove('active'));
   document.getElementById('vc-'+key).classList.add('active');
-  // Auto-preview when voice changes
-  autoPreviewEffect();
+  // Auto-preview when voice changes (with current settings)
+  autoPreviewWithSettings();
 }
 
 function pickEffect(id){
@@ -800,54 +878,8 @@ function pickEffect(id){
     event.preventDefault();
   }
   
-  // Auto-preview the selected effect
-  autoPreviewEffect();
-}
-
-async function autoPreviewEffect(){
-  // Only preview if there's text or use default
-  const txt = document.getElementById('txt').value.trim();
-  const sample = txt ? txt.slice(0,100) : 'నమస్కారం! ఇది వాయిస్ ఎఫెక్ట్ ప్రివ్యూ.';
-  
-  try{
-    // Show mini loading for effect preview
-    const effectCard = document.getElementById('effect-'+selectedEffect);
-    const originalContent = effectCard.innerHTML;
-    effectCard.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;"><div class="mini-spin" style="display:flex;"></div></div>';
-    
-    await streamGen({
-      text: sample,
-      voice,
-      rate: '+0%',  // Use default speed for quick preview
-      pitch: '+0Hz', // Use default pitch for quick preview
-      effect: selectedEffect
-    },()=>{}, msg=>{
-      // Restore effect card content
-      effectCard.innerHTML = originalContent;
-      
-      // Play preview automatically
-      const previewAudio = document.getElementById('effect-preview-audio') || createPreviewAudio();
-      previewAudio.src = msg.url + '?t=' + Date.now();
-      previewAudio.load();
-      previewAudio.play().catch(e => console.log('Auto-play blocked'));
-    }, e => {
-      // Restore effect card on error
-      effectCard.innerHTML = originalContent;
-      console.log('Preview error:', e);
-    });
-  } catch(e) {
-    console.log('Auto-preview error:', e);
-  }
-}
-
-function createPreviewAudio(){
-  // Create hidden audio element for effect previews
-  const audio = document.createElement('audio');
-  audio.id = 'effect-preview-audio';
-  audio.style.display = 'none';
-  audio.volume = 0.7; // Slightly quieter for preview
-  document.body.appendChild(audio);
-  return audio;
+  // Auto-preview the selected effect with current settings
+  autoPreviewWithSettings();
 }
 
 async function streamGen(payload,onP,onD,onE){
