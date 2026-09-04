@@ -55,42 +55,124 @@ PRESETS = [
 def preprocess_telugu_text(text):
     """Telugu TTS కోసం numbers, years, dates సరిగ్గా convert చేస్తుంది"""
     
-    # Years (2000-2099)
+    # Years (1900-2099) - More comprehensive handling
     def replace_years(match):
         year = int(match.group())
-        if year >= 2000 and year <= 2099:
-            decade = year // 10 % 10
-            unit = year % 10
-            
+        
+        if year >= 1900 and year <= 1999:  # 1900s
+            if year == 1900:
+                return "వేయి తొమ్మిది వందలు"
+            elif year <= 1909:
+                unit = year % 10
+                unit_words = ["", "ఒకటి", "రెండు", "మూడు", "నాలుగు", "ఐదు", "ఆరు", "ఏడు", "ఎనిమిది", "తొమ్మిది"]
+                return f"వేయి తొమ్మిది వందల {unit_words[unit]}"
+            elif year <= 1919:
+                unit = year % 10
+                if unit == 0:
+                    return "వేయి తొమ్మిది వందల పది"
+                else:
+                    unit_words = ["", "ఒకటి", "రెండు", "మూడు", "నాలుగు", "ఐదు", "ఆరు", "ఏడు", "ఎనిమిది", "తొమ్మిది"]
+                    return f"వేయి తొమ్మిది వందల పదో {unit_words[unit]}"
+            elif year <= 1929:
+                unit = year % 10
+                if unit == 0:
+                    return "వేయి తొమ్మిది వందల ఇరవై"
+                else:
+                    unit_words = ["", "ఒకటి", "రెండు", "మూడు", "నాలుగు", "ఐదు", "ఆరు", "ఏడు", "ఎనిమిది", "తొమ్మిది"]
+                    return f"వేయి తొమ్మిది వందల ఇరవై {unit_words[unit]}"
+            elif year <= 1939:
+                unit = year % 10
+                if unit == 0:
+                    return "వేయి తొమ్మిది వందల ముప్పై"
+                else:
+                    unit_words = ["", "ఒకటి", "రెండు", "మూడు", "నాలుగు", "ఐదు", "ఆరు", "ఏడు", "ఎనిమిది", "తొమ్మిది"]
+                    return f"వేయి తొమ్మిది వందల ముప్పై {unit_words[unit]}"
+            elif year <= 1949:
+                unit = year % 10
+                if unit == 0:
+                    return "వేయి తొమ్మిది వందల నలభై"
+                else:
+                    unit_words = ["", "ఒకటి", "రెండు", "మూడు", "నాలుగు", "ఐదు", "ఆరు", "ఏడు", "ఎనిమిది", "తొమ్మిది"]
+                    return f"వేయి తొమ్మిది వందల నలభై {unit_words[unit]}"
+            elif year <= 1959:
+                unit = year % 10
+                if unit == 0:
+                    return "వేయి తొమ్మిది వందల యాభై"
+                else:
+                    unit_words = ["", "ఒకటి", "రెండు", "మూడు", "నాలుగు", "ఐదు", "ఆరు", "ఏడు", "ఎనిమిది", "తొమ్మిది"]
+                    return f"వేయి తొమ్మిది వందల యాభై {unit_words[unit]}"
+            elif year <= 1969:
+                unit = year % 10
+                if unit == 0:
+                    return "వేయి తొమ్మిది వందల అరవై"
+                else:
+                    unit_words = ["", "ఒకటి", "రెండు", "మూడు", "నాలుగు", "ఐదు", "ఆరు", "ఏడు", "ఎనిమిది", "తొమ్మిది"]
+                    return f"వేయి తొమ్మిది వందల అరవై {unit_words[unit]}"
+            elif year <= 1979:
+                unit = year % 10
+                if unit == 0:
+                    return "వేయి తొమ్మిది వందల డదబ్బై"
+                else:
+                    unit_words = ["", "ఒకటి", "రెండు", "మూడు", "నాలుగు", "ఐదు", "ఆరు", "ఏడు", "ఎనిమిది", "తొమ్మిది"]
+                    return f"వేయి తొమ్మిది వందల డదబ్బై {unit_words[unit]}"
+            elif year <= 1989:
+                unit = year % 10
+                if unit == 0:
+                    return "వేయి తొమ్మిది వందల ఎనభై"
+                else:
+                    unit_words = ["", "ఒకటి", "రెండు", "మూడు", "నాలుగు", "ఐదు", "ఆరు", "ఏడు", "ఎనిమిది", "తొమ్మిది"]
+                    return f"వేయి తొమ్మిది వందల ఎనభై {unit_words[unit]}"
+            elif year <= 1999:
+                unit = year % 10
+                if unit == 0:
+                    return "వేయి తొమ్మిది వందల తొంభై"
+                else:
+                    unit_words = ["", "ఒకటి", "రెండు", "మూడు", "నాలుగు", "ఐదు", "ఆరు", "ఏడు", "ఎనిమిది", "తొమ్మిది"]
+                    return f"వేయి తొమ్మిది వందల తొంభై {unit_words[unit]}"
+                    
+        elif year >= 2000 and year <= 2099:  # 2000s
             if year == 2000:
                 return "రెండు వేలు"
-            elif decade == 0:  # 2001-2009
+            elif year <= 2009:
+                unit = year % 10
                 unit_words = ["", "ఒకటి", "రెండు", "మూడు", "నాలుగు", "ఐదు", "ఆరు", "ఏడు", "ఎనిమిది", "తొమ్మిది"]
                 return f"రెండు వేల {unit_words[unit]}"
-            elif decade == 1:  # 2010-2019
+            elif year <= 2019:
+                unit = year % 10
                 if unit == 0:
                     return "రెండు వేల పది"
                 else:
                     unit_words = ["", "ఒకటి", "రెండు", "మూడు", "నాలుగు", "ఐదు", "ఆరు", "ఏడు", "ఎనిమిది", "తొమ్మిది"]
                     return f"రెండు వేల పదో {unit_words[unit]}"
-            elif decade == 2:  # 2020-2029
+            elif year <= 2029:
+                unit = year % 10
                 if unit == 0:
                     return "రెండు వేల ఇరవై"
                 else:
                     unit_words = ["", "ఒకటి", "రెండు", "మూడు", "నాలుగు", "ఐదు", "ఆరు", "ఏడు", "ఎనిమిది", "తొమ్మిది"]
                     return f"రెండు వేల ఇరవై {unit_words[unit]}"
-            elif decade == 3:  # 2030-2039
+            elif year <= 2039:
+                unit = year % 10
                 if unit == 0:
                     return "రెండు వేల ముప్పై"
                 else:
                     unit_words = ["", "ఒకటి", "రెండు", "మూడు", "నాలుగు", "ఐదు", "ఆరు", "ఏడు", "ఎనిమిది", "తొమ్మిది"]
                     return f"రెండు వేల ముప్పై {unit_words[unit]}"
-            else:  # Generic fallback
-                return match.group()
-        return match.group()
+            else:  # 2040-2099
+                decade = (year // 10) % 10
+                unit = year % 10
+                decade_words = ["", "", "ఇరవై", "ముప్పై", "నలభై", "యాభై", "అరవై", "డదబ్బై", "ఎనభై", "తొంభై"]
+                unit_words = ["", "ఒకటి", "రెండు", "మూడు", "నాలుగు", "ఐదు", "ఆరు", "ఏడు", "ఎనిమిది", "తొమ్మిది"]
+                
+                if unit == 0:
+                    return f"రెండు వేల {decade_words[decade]}"
+                else:
+                    return f"రెండు వేల {decade_words[decade]} {unit_words[unit]}"
+        
+        return match.group()  # Return original if not handled
     
-    # Years pattern
-    text = re.sub(r'\b(20[0-9]{2})\b', replace_years, text)
+    # Years pattern - match 4-digit years
+    text = re.sub(r'\b(19[0-9]{2}|20[0-9]{2})\b', replace_years, text)
     
     # Common numbers (0-99)
     number_replacements = {
